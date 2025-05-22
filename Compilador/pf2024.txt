@@ -1,0 +1,21 @@
+pf2024 Ejem1            --Encabezado, deberá llevar el nombre del lenguaje--
+
+int número = 1
+int poscion+
+
+@de@cl@                    --Pal_Reserv Declaración de variables--
+#pos#ici#on#
+--Comentario--
+int posición a,b,c,f ;
+Cad d;
+Bool e;
+
+Inicio                  --Cuerpo del programa, inicio etc--
+a:=5;
+b:=3;
+impcad(“Dame un numero, Hola mundo”);    --solicita un número--
+leerdig(var);           --Guarda un valor entero en una variable--
+d:=a*b-c;
+d:=a*(b-c);
+impcad(d);
+Fin

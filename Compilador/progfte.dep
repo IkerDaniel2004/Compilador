@@ -1,0 +1,1 @@
+pf2024Ejem1intnúmero=1intposcion+@de@cl@#pos#ici#on#intposicióna,b,c,f;Cadd;Boole;Inicioa:=5;b:=3;impcad(“Dameunnumero,Holamundo”);leerdig(var);d:=a*b-c;d:=a*(b-c);impcad(d);Fin
