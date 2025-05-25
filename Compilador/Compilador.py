@@ -177,7 +177,7 @@ def generar_archivo_tok(tokens_analizados):
 
 def generar_archivo_tab(tokens_analizados):
     token_codes = {
- 'PROGRAMA': 100,
+        'PROGRAMA': 100,
         'TIPO_DATO': 200,
         'IDENTIFICADOR': 300,
         'CONSTANTE': 400,
@@ -199,8 +199,7 @@ def generar_archivo_tab(tokens_analizados):
         'COMA': 80,
         'PuntoYComa': 81,
         'DosPuntos': 82,
-        'TEXTO': 500,
-        'ERROR_LEXICO': 0
+        'TEXTO': 500
     }
     
     with open('progfte.tab', 'w', encoding='utf-8') as f:
@@ -217,7 +216,8 @@ def generar_archivo_tab(tokens_analizados):
                 fin_encontrado = True
                 break
                 
-            if token['type'] not in ['COMENTARIO']:
+            # Excluye TODOS los errores y comentarios
+            if not token['type'].startswith('ERROR_') and token['type'] not in ['COMENTARIO']:
                 simbolos.append(token)
         
         # Escribir todos los símbolos en orden
