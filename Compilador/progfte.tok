@@ -37,13 +37,14 @@ Renglón: 15      Lexema: 3               Token: CONSTANTE
 Renglón: 15      Lexema: ;               Token: PuntoYComa
 Renglón: 16      Lexema: impcad          Token: IDENTIFICADOR
 Renglón: 16      Lexema: (               Token: PAREN_IZQ
-Renglón: 16      Lexema: “Dame           Token: ERROR_LEXICO
+Renglón: 16      Lexema: “               Token: COMILLA_IZQ
+Renglón: 16      Lexema: Dame            Token: IDENTIFICADOR
 Renglón: 16      Lexema: un              Token: IDENTIFICADOR
 Renglón: 16      Lexema: numero          Token: IDENTIFICADOR
 Renglón: 16      Lexema: ,               Token: COMA
 Renglón: 16      Lexema: Hola            Token: IDENTIFICADOR
 Renglón: 16      Lexema: mundo           Token: IDENTIFICADOR
-Renglón: 16      Lexema: ”               Token: ERROR_LEXICO
+Renglón: 16      Lexema: ”               Token: COMILLA_DER
 Renglón: 16      Lexema: )               Token: PAREN_DER
 Renglón: 16      Lexema: ;               Token: PuntoYComa
 Renglón: 17      Lexema: leerdig         Token: IDENTIFICADOR

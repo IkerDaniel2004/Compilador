@@ -1,9 +1,14 @@
 from ply import lex
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 from PIL import Image, ImageTk
 import os
 import re
+
+# ----------------------------
+# Configuración de rutas
+# ----------------------------
+RUTA_SALIDA_ALTERNATIVA = r"D:\VisualStudioCode\Compilador"
 
 # ----------------------------
 # Analizador Léxico 
@@ -43,6 +48,7 @@ tokens = [
     'IDENTIFICADOR',    # Nombres de variables/funciones
     'CONSTANTE',        # Números enteros
     'TEXTO',            # Cadenas entre comillas
+    'TEXTO_MAL_FORMADO', # Texto con comillas no cerradas
     'CARACTER',         # Caracteres entre comillas simples
     'PAREN_IZQ',        # (
     'PAREN_DER',        # )
@@ -54,12 +60,14 @@ tokens = [
     'COMA',             # ,
     'PuntoYComa',       # ;
     'DosPuntos',        # :
+    'COMILLA_IZQ',      # “ o "
+    'COMILLA_DER',      # ” o "
     'ERROR_LEXICO'     # Para símbolos no permitidos
 ] + list(reserved.values()) + list(set(tipos_dato.values()))
 
 errores_lexicos = []
 
-# Expresiones regulares para símbolos simplesq
+# Expresiones regulares para símbolos simples
 t_IGUAL = r'='
 t_PAREN_IZQ = r'\('
 t_PAREN_DER = r'\)'
@@ -69,6 +77,13 @@ t_MULTIPLICACION = r'\*'
 t_DIVISION = r'/'
 t_ignore = ' \t'  # Espacios y tabs se ignoran
 
+def t_COMILLA_IZQ(t):
+    r'[“"]'
+    return t
+
+def t_COMILLA_DER(t):
+    r'[”"]'
+    return t
 
 def t_DosPuntos(t):
     r':'
@@ -123,10 +138,33 @@ def t_IDENTIFICADOR(t):
         t.type = 'IDENTIFICADOR'
     return t
 
+def t_TEXTO(t):
+    r'[“"][^“”"]*[”"]'
+    t.value = t.value[1:-1]  # Elimina las comillas
+    return t
+
 def t_error(t):
     remaining = t.lexer.lexdata[t.lexer.lexpos:]
     end = 0
-    while end < len(remaining) and not remaining[end].isspace() and remaining[end] not in '()=+-*/"':
+    
+    # Verificar si es una comilla no cerrada
+    if t.value in ['"', '“']:
+        while end < len(remaining) and remaining[end] not in ['"', '”', '\n']:
+            end += 1
+        
+        if end >= len(remaining) or remaining[end] in ['\n']:
+            t.type = 'TEXTO_MAL_FORMADO'
+            t.value = t.value + remaining[:end]
+            t.lexer.lexpos += end
+            errores_lexicos.append({
+                'line': t.lineno,
+                'value': t.value,
+                'type': t.type
+            })
+            return t
+    
+    # Manejo de otros errores léxicos
+    while end < len(remaining) and not remaining[end].isspace() and remaining[end] not in '()=+-*/"“”':
         end += 1
     
     invalid = remaining[:end]
@@ -147,11 +185,6 @@ def t_CONSTANTE(t):
     t.value = int(t.value)
     return t
 
-def t_TEXTO(t):
-    r'\".*?\"'
-    t.value = t.value[1:-1]
-    return t
-
 def t_COMENTARIO(t):
     r'--.*'
     pass
@@ -167,15 +200,18 @@ lexer = lex.lex()
 # Funciones para generación de archivos
 # ----------------------------
 
-def generar_archivo_tok(tokens_analizados):
-    with open('progfte.tok', 'w', encoding='utf-8') as f:
-        # Escribir tokens válidos
+def generar_archivo_tok(tokens_analizados, output_dir):
+    ruta_completa = os.path.join(output_dir, 'progfte.tok')
+    with open(ruta_completa, 'w', encoding='utf-8') as f:
         for token in tokens_analizados:
             if token['type'] not in ['COMENTARIO']:
-                line = f"Renglón: {token['line']:<7} Lexema: {token['value']:<15} Token: {token['type']}\n"
+                if token['type'] == 'TEXTO_MAL_FORMADO':
+                    line = f"Renglón: {token['line']:<7} Lexema: {token['value']:<15} Token: {token['type']} (Falta comilla de cierre)\n"
+                else:
+                    line = f"Renglón: {token['line']:<7} Lexema: {token['value']:<15} Token: {token['type']}\n"
                 f.write(line)
 
-def generar_archivo_tab(tokens_analizados):
+def generar_archivo_tab(tokens_analizados, output_dir):
     token_codes = {
         'PROGRAMA': 100,
         'TIPO_DATO': 200,
@@ -199,15 +235,17 @@ def generar_archivo_tab(tokens_analizados):
         'COMA': 80,
         'PuntoYComa': 81,
         'DosPuntos': 82,
-        'TEXTO': 500
+        'TEXTO': 500,
+        'COMILLA_IZQ': 83,
+        'COMILLA_DER': 84
     }
     
-    with open('progfte.tab', 'w', encoding='utf-8') as f:
+    ruta_completa = os.path.join(output_dir, 'progfte.tab')
+    with open(ruta_completa, 'w', encoding='utf-8') as f:
         f.write("{:<8} {:<20} {:<50} {:<15}\n".format(
             "No", "Lexema", "Token", "Referencia"))
         f.write("-"*93 + "\n")
         
-        # Procesar tokens válidos hasta Fin
         simbolos = []
         fin_encontrado = False
         for token in tokens_analizados:
@@ -216,11 +254,9 @@ def generar_archivo_tab(tokens_analizados):
                 fin_encontrado = True
                 break
                 
-            # Excluye TODOS los errores y comentarios
-            if not token['type'].startswith('ERROR_') and token['type'] not in ['COMENTARIO']:
+            if not token['type'].startswith('ERROR_') and token['type'] not in ['COMENTARIO', 'TEXTO_MAL_FORMADO']:
                 simbolos.append(token)
         
-        # Escribir todos los símbolos en orden
         for i, simbolo in enumerate(simbolos, 1):
             f.write("{:<8} {:<20} {:<50} {:<15}\n".format(
                 i,
@@ -237,21 +273,17 @@ def generar_depuracion(tokens_analizados):
     while i < n and not fin_encontrado:
         token = tokens_analizados[i]
 
-        # Detecta FIN
         if token['type'] == 'PALABRA_RESERVADA_FIN':
             fin_encontrado = True
             depurado.append('Fin')
             break
 
-        # Ignora comentarios
         if token['type'] == 'COMENTARIO':
             i += 1
             continue
 
-        # Comas sin espacio
         if token['type'] == 'COMA':
             depurado.append(',')
-        # Detecta asignaciones tipo "a := 5"
         elif (
             i + 2 < n and
             tokens_analizados[i]['type'] == 'IDENTIFICADOR' and
@@ -264,19 +296,32 @@ def generar_depuracion(tokens_analizados):
             i += 3
             continue
         else:
-            # Añade cualquier otro token tal cual, sin espacios
             depurado.append(str(token['value']))
 
         i += 1
 
-    # Junta todo sin espacios
     return ''.join(depurado)
 
 def analizar_archivo(file_path):
     global errores_lexicos
-    errores_lexicos = []  # Reiniciar lista de errores
+    errores_lexicos = []
     
     try:
+        # Determinar la ruta de salida
+        try:
+            # Intentar usar el mismo directorio que el archivo de entrada
+            output_dir = os.path.dirname(file_path)
+            if not os.path.exists(output_dir) or not os.access(output_dir, os.W_OK):
+                raise Exception("Sin permisos en directorio origen")
+        except:
+            # Usar ruta alternativa si no se puede usar la original
+            output_dir = RUTA_SALIDA_ALTERNATIVA
+            os.makedirs(output_dir, exist_ok=True)
+            messagebox.showwarning(
+                "Aviso", 
+                f"No se pudo guardar en el directorio original. \nLos archivos se guardarán en: {output_dir}"
+            )
+
         with open(file_path, 'r', encoding='utf-8') as f:
             contenido = f.readlines()
             
@@ -294,15 +339,15 @@ def analizar_archivo(file_path):
                 'line': tok.lineno
             })
         
-        # Generar archivos
-        generar_archivo_tok(tokens_analizados)
-        generar_archivo_tab(tokens_analizados)
+        # Generar archivos con rutas completas
+        generar_archivo_tok(tokens_analizados, output_dir)
+        generar_archivo_tab(tokens_analizados, output_dir)
         
         depuracion = generar_depuracion(tokens_analizados)
-        with open('progfte.dep', 'w', encoding='utf-8') as f:
+        with open(os.path.join(output_dir, 'progfte.dep'), 'w', encoding='utf-8') as f:
             f.write(depuracion)
         
-        return True, "Análisis completado con éxito"
+        return True, f"Análisis completado. Archivos guardados en: {output_dir}"
     
     except Exception as e:
         return False, f"Error durante el análisis: {str(e)}"
@@ -317,7 +362,6 @@ def main():
     root.geometry("650x350")
     root.configure(bg="#f0f0f0")
 
-    # Configuración de estilo
     estilo = {
         "font": ("Arial", 12),
         "bg": "#f0f0f0",
@@ -325,24 +369,20 @@ def main():
         "pady": 5
     }
 
-    # Marco principal
     main_frame = tk.Frame(root, bg="#f0f0f0")
     main_frame.pack(expand=True, fill=tk.BOTH, padx=25, pady=25)
 
-    # Título
     tk.Label(main_frame, text="Analizador Léxico", 
             font=("Arial", 18, "bold"), bg="#f0f0f0", fg="#333").pack(pady=(0, 20))
 
-    # Contenedor
     content_frame = tk.Frame(main_frame, bg="#f0f0f0")
     content_frame.pack(fill=tk.BOTH, expand=True)
 
-    # Panel izquierdo (imagen)
     left_panel = tk.Frame(content_frame, bg="#f0f0f0")
     left_panel.pack(side=tk.LEFT, fill=tk.Y)
 
     try:
-        img = Image.new('RGB', (150, 150), color='white')  # Imagen dummy
+        img = Image.new('RGB', (150, 150), color='white')
         img_tk = ImageTk.PhotoImage(img)
         img_label = tk.Label(left_panel, image=img_tk, bg="#f0f0f0")
         img_label.image = img_tk
@@ -350,7 +390,6 @@ def main():
     except:
         pass
 
-    # Panel derecho
     right_panel = tk.Frame(content_frame, bg="#f0f0f0")
     right_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
@@ -366,7 +405,6 @@ def main():
                    padx=20, pady=8)
     btn.pack()
 
-    # Estado
     global status_label
     status_label = tk.Label(right_panel, text="", font=("Arial", 11), 
                           bg="#f0f0f0", fg="green", wraplength=400)
@@ -380,7 +418,7 @@ def main():
         success, message = analizar_archivo(file_path)
         
         if success:
-            status_label.config(text=f"✓ {message}\nArchivo: {file_path}", fg="green")
+            status_label.config(text=f"✓ {message}", fg="green")
         else:
             status_label.config(text=f"✗ {message}", fg="red")
 
