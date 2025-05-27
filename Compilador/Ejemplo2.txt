@@ -1,0 +1,1 @@
+promedio = (nota1 + nota2) / 2

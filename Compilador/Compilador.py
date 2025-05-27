@@ -1,4 +1,4 @@
-from ply import lex
+from ply import lex, yacc
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from PIL import Image, ImageTk
@@ -103,7 +103,7 @@ def t_PROGRAMA(t):
     return t
 
 def t_ERROR_IDENTIFICADOR_OPERADOR(t):
-    r'[\+/][a-zA-Z_][a-zA-Z0-9_]*|[a-zA-Z_][a-zA-Z0-9_]*[\+/]'
+    r'[\+/][a-zA-Z_][a-zA-Z0-9_]|[a-zA-Z_][a-zA-Z0-9_][\+/]'
     errores_lexicos.append({
         'line': t.lineno,
         'value': t.value,
@@ -197,6 +197,94 @@ def t_newline(t):
 lexer = lex.lex()
 
 # ----------------------------
+# Analizador Sintáctico
+# ----------------------------
+
+# Nodos del árbol sintáctico
+class Nodo:
+    def __init__(self, tipo, hijos=None, valor=None):
+        self.tipo = tipo
+        self.hijos = hijos if hijos is not None else []
+        self.valor = valor
+
+    def __repr__(self):
+        return f"{self.tipo}({self.valor})" if self.valor else self.tipo
+
+# Reglas de precedencia
+precedence = (
+    ('left', 'SUMA', 'RESTA'),
+    ('left', 'MULTIPLICACION', 'DIVISION'),
+)
+
+# Gramática
+def p_programa(p):
+    '''programa : PROGRAMA DosPuntos bloque
+               | expresion PuntoYComa
+               | asignacion'''
+    if len(p) == 4:  # Caso: Script: Inicio...Fin
+        p[0] = Nodo('PROGRAMA', [p[3]])
+    else:  # Caso: expresión suelta o asignación
+        p[0] = p[1]
+
+def p_bloque(p):
+    '''bloque : PALABRA_RESERVADA_INICIO instrucciones PALABRA_RESERVADA_FIN
+              | instrucciones'''
+    if len(p) == 4:
+        p[0] = Nodo('BLOQUE', [p[2]])
+    else:
+        p[0] = Nodo('BLOQUE', [p[1]])
+
+def p_instrucciones(p):
+    '''instrucciones : instruccion
+                    | instrucciones instruccion'''
+    if len(p) == 2:
+        p[0] = Nodo('INSTRUCCIONES', [p[1]])
+    else:
+        p[0] = Nodo('INSTRUCCIONES', [p[1], p[2]])
+
+def p_instruccion(p):
+    '''instruccion : asignacion
+                  | expresion PuntoYComa'''
+    p[0] = p[1]
+
+def p_asignacion(p):
+    '''asignacion : IDENTIFICADOR IGUAL expresion PuntoYComa
+                 | IDENTIFICADOR IGUAL expresion'''  # Sin punto y coma
+    p[0] = Nodo('ASIGNACION', [
+        Nodo('ID', valor=p[1]),
+        Nodo('IGUAL', valor='='),  # Nodo explícito para el =
+        p[3]  # Expresión
+    ])
+
+def p_expresion_binaria(p):
+    '''expresion : expresion SUMA expresion
+                | expresion RESTA expresion
+                | expresion MULTIPLICACION expresion
+                | expresion DIVISION expresion'''
+    p[0] = Nodo(p[2], [p[1], p[3]])
+
+def p_expresion_parentesis(p):
+    'expresion : PAREN_IZQ expresion PAREN_DER'
+    p[0] = p[2]
+
+def p_expresion_identificador(p):
+    'expresion : IDENTIFICADOR'
+    p[0] = Nodo('ID', valor=p[1])
+
+def p_expresion_numero(p):
+    'expresion : CONSTANTE'
+    p[0] = Nodo('NUMERO', valor=p[1])
+
+def p_error(p):
+    if p:
+        raise SyntaxError(f"Error de sintaxis en token '{p.value}' (línea {p.lineno})")
+    else:
+        raise SyntaxError("Error de sintaxis: entrada incompleta")
+
+# Construir el parser
+parser = yacc.yacc()
+
+# ----------------------------
 # Funciones para generación de archivos
 # ----------------------------
 
@@ -264,7 +352,7 @@ def generar_archivo_tab(tokens_analizados, output_dir):
                 simbolo['type'],
                 token_codes.get(simbolo['type'], 999)))
 
-def generar_depuracion(tokens_analizados):
+def generar_depuracion(tokens_analizados, output_dir):
     depurado = []
     i = 0
     n = len(tokens_analizados)
@@ -300,7 +388,48 @@ def generar_depuracion(tokens_analizados):
 
         i += 1
 
-    return ''.join(depurado)
+    with open(os.path.join(output_dir, 'progfte.dep'), 'w', encoding='utf-8') as f:
+        f.write(''.join(depurado))
+
+def generar_arbol_sintactico(arbol, output_dir):
+    def _generar_texto(nodo, nivel=0):
+        # Caso especial para asignaciones
+        if nodo.tipo == 'ASIGNACION':
+            texto = "  " * nivel + "ASIGNACION\n"
+            texto += _generar_texto(nodo.hijos[0], nivel + 1)  # ID
+            texto += _generar_texto(nodo.hijos[1], nivel + 1)  # =
+            texto += _generar_texto(nodo.hijos[2], nivel + 1)  # Expresión
+            return texto
+        
+        # Caso para operadores
+        if nodo.tipo in ['SUMA', 'RESTA', 'MULTIPLICACION', 'DIVISION', 'IGUAL']:
+            simbolo = {
+                'SUMA': '+',
+                'RESTA': '-',
+                'MULTIPLICACION': '*',
+                'DIVISION': '/',
+                'IGUAL': '='
+            }[nodo.tipo]
+            texto = "  " * nivel + f"{simbolo}\n"
+            for hijo in nodo.hijos:
+                texto += _generar_texto(hijo, nivel + 1)
+            return texto
+        
+        # Caso para identificadores y números
+        if nodo.tipo == 'ID':
+            return "  " * nivel + f"ID({nodo.valor})\n"
+        if nodo.tipo == 'NUMERO':
+            return "  " * nivel + f"NUMERO({nodo.valor})\n"
+        
+        # Caso base para otros nodos (PROGRAMA, BLOQUE, etc.)
+        texto = "  " * nivel + f"{nodo.tipo}\n"
+        for hijo in nodo.hijos:
+            texto += _generar_texto(hijo, nivel + 1)
+        return texto
+
+    ruta_completa = os.path.join(output_dir, 'progfte.arb')
+    with open(ruta_completa, 'w', encoding='utf-8') as f:
+        f.write(_generar_texto(arbol))
 
 def analizar_archivo(file_path):
     global errores_lexicos
@@ -309,12 +438,10 @@ def analizar_archivo(file_path):
     try:
         # Determinar la ruta de salida
         try:
-            # Intentar usar el mismo directorio que el archivo de entrada
             output_dir = os.path.dirname(file_path)
             if not os.path.exists(output_dir) or not os.access(output_dir, os.W_OK):
                 raise Exception("Sin permisos en directorio origen")
         except:
-            # Usar ruta alternativa si no se puede usar la original
             output_dir = RUTA_SALIDA_ALTERNATIVA
             os.makedirs(output_dir, exist_ok=True)
             messagebox.showwarning(
@@ -323,42 +450,67 @@ def analizar_archivo(file_path):
             )
 
         with open(file_path, 'r', encoding='utf-8') as f:
-            contenido = f.readlines()
-            
-        lexer.input(''.join(contenido))
+            contenido = f.read().strip()  # Elimina espacios en blanco al inicio/final
+
+        # Preprocesamiento para aceptar expresiones sueltas
+        if not contenido.startswith("Script"):
+            # Si no empieza con Script, lo envolvemos en la estructura mínima
+            contenido_wrapped = f"Script:\nInicio\n{contenido}\nFin"
+            try:
+                # Primero intentamos parsear como expresión suelta envuelta
+                lexer.input(contenido_wrapped)
+                arbol = parser.parse(contenido_wrapped, lexer=lexer, tracking=True)
+            except SyntaxError:
+                # Si falla, probamos parsear directamente
+                lexer.input(contenido)
+                arbol = parser.parse(contenido, lexer=lexer, tracking=True)
+        else:
+            # Contenido ya tiene estructura Script completa
+            lexer.input(contenido)
+            arbol = parser.parse(contenido, lexer=lexer, tracking=True)
+
+        # Recolectar tokens para archivos .tok y .tab (usando el contenido original)
+        lexer.input(contenido)
         tokens_analizados = []
-        
         while True:
             tok = lexer.token()
-            if not tok:
+            if not tok: 
                 break
-            
             tokens_analizados.append({
                 'type': tok.type,
                 'value': tok.value,
                 'line': tok.lineno
             })
-        
-        # Generar archivos con rutas completas
+
+        # Generar todos los archivos de salida
         generar_archivo_tok(tokens_analizados, output_dir)
         generar_archivo_tab(tokens_analizados, output_dir)
-        
-        depuracion = generar_depuracion(tokens_analizados)
-        with open(os.path.join(output_dir, 'progfte.dep'), 'w', encoding='utf-8') as f:
-            f.write(depuracion)
-        
-        return True, f"Análisis completado. Archivos guardados en: {output_dir}"
-    
-    except Exception as e:
-        return False, f"Error durante el análisis: {str(e)}"
+        generar_depuracion(tokens_analizados, output_dir)
+        generar_arbol_sintactico(arbol, output_dir)
 
+        return True, f"Análisis completado. Archivos guardados en: {output_dir}"
+
+    except SyntaxError as e:
+        # Capturar errores sintácticos específicos con información de línea
+        error_msg = f"Error de sintaxis: {str(e)}"
+        if hasattr(e, 'lineno') and hasattr(e, 'text'):
+            error_msg += f"\nLínea {e.lineno}: {e.text.strip() if e.text else ''}"
+        return False, error_msg
+
+    except Exception as e:
+        # Capturar otros errores inesperados
+        error_msg = f"Error inesperado: {str(e)}"
+        # Agregar información de línea si está disponible
+        if hasattr(e, 'lineno') and hasattr(e, 'text'):
+            error_msg += f"\nLínea {e.lineno}: {e.text.strip() if e.text else ''}"
+        return False, error_msg
 # ----------------------------
 # Interfaz Gráfica
 # ----------------------------
 
 def main():
     root = tk.Tk()
-    root.title("Analizador Léxico")
+    root.title("Analizador Léxico y Sintáctico")
     root.geometry("650x350")
     root.configure(bg="#f0f0f0")
 
@@ -372,7 +524,7 @@ def main():
     main_frame = tk.Frame(root, bg="#f0f0f0")
     main_frame.pack(expand=True, fill=tk.BOTH, padx=25, pady=25)
 
-    tk.Label(main_frame, text="Analizador Léxico", 
+    tk.Label(main_frame, text="Analizador Léxico y Sintáctico", 
             font=("Arial", 18, "bold"), bg="#f0f0f0", fg="#333").pack(pady=(0, 20))
 
     content_frame = tk.Frame(main_frame, bg="#f0f0f0")

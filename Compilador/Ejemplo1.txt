@@ -1,0 +1,5 @@
+Script:
+Inicio
+  x = 10;
+  y = x * 2 + 5;
+Fin

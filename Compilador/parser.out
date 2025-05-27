@@ -1,0 +1,680 @@
+Created by PLY version 3.11 (http://www.dabeaz.com/ply)
+
+Unused terminals:
+
+    CARACTER
+    COMA
+    COMILLA_DER
+    COMILLA_IZQ
+    ERROR_IDENTIFICADOR
+    ERROR_IDENTIFICADOR_NUM
+    ERROR_LEXICO
+    PALABRA_RESERVADA_ENTONCES
+    PALABRA_RESERVADA_FALSO
+    PALABRA_RESERVADA_HACER
+    PALABRA_RESERVADA_IMPRIMIR_BOLEANO
+    PALABRA_RESERVADA_IMPRIMIR_CADENA
+    PALABRA_RESERVADA_IMPRIMIR_NUMERO
+    PALABRA_RESERVADA_LEER_BOLEANO
+    PALABRA_RESERVADA_LEER_CADENA
+    PALABRA_RESERVADA_LEER_NUMERO
+    PALABRA_RESERVADA_MIENTRAS
+    PALABRA_RESERVADA_SI
+    PALABRA_RESERVADA_SINO
+    PALABRA_RESERVADA_VERDADERO
+    TEXTO
+    TEXTO_MAL_FORMADO
+    TIPO_DATO
+
+Grammar
+
+Rule 0     S' -> programa
+Rule 1     programa -> PROGRAMA DosPuntos bloque
+Rule 2     programa -> expresion PuntoYComa
+Rule 3     programa -> asignacion
+Rule 4     bloque -> PALABRA_RESERVADA_INICIO instrucciones PALABRA_RESERVADA_FIN
+Rule 5     bloque -> instrucciones
+Rule 6     instrucciones -> instruccion
+Rule 7     instrucciones -> instrucciones instruccion
+Rule 8     instruccion -> asignacion
+Rule 9     instruccion -> expresion PuntoYComa
+Rule 10    asignacion -> IDENTIFICADOR IGUAL expresion PuntoYComa
+Rule 11    asignacion -> IDENTIFICADOR IGUAL expresion
+Rule 12    expresion -> expresion SUMA expresion
+Rule 13    expresion -> expresion RESTA expresion
+Rule 14    expresion -> expresion MULTIPLICACION expresion
+Rule 15    expresion -> expresion DIVISION expresion
+Rule 16    expresion -> PAREN_IZQ expresion PAREN_DER
+Rule 17    expresion -> IDENTIFICADOR
+Rule 18    expresion -> CONSTANTE
+
+Terminals, with rules where they appear
+
+CARACTER             : 
+COMA                 : 
+COMILLA_DER          : 
+COMILLA_IZQ          : 
+CONSTANTE            : 18
+DIVISION             : 15
+DosPuntos            : 1
+ERROR_IDENTIFICADOR  : 
+ERROR_IDENTIFICADOR_NUM : 
+ERROR_LEXICO         : 
+IDENTIFICADOR        : 10 11 17
+IGUAL                : 10 11
+MULTIPLICACION       : 14
+PALABRA_RESERVADA_ENTONCES : 
+PALABRA_RESERVADA_FALSO : 
+PALABRA_RESERVADA_FIN : 4
+PALABRA_RESERVADA_HACER : 
+PALABRA_RESERVADA_IMPRIMIR_BOLEANO : 
+PALABRA_RESERVADA_IMPRIMIR_CADENA : 
+PALABRA_RESERVADA_IMPRIMIR_NUMERO : 
+PALABRA_RESERVADA_INICIO : 4
+PALABRA_RESERVADA_LEER_BOLEANO : 
+PALABRA_RESERVADA_LEER_CADENA : 
+PALABRA_RESERVADA_LEER_NUMERO : 
+PALABRA_RESERVADA_MIENTRAS : 
+PALABRA_RESERVADA_SI : 
+PALABRA_RESERVADA_SINO : 
+PALABRA_RESERVADA_VERDADERO : 
+PAREN_DER            : 16
+PAREN_IZQ            : 16
+PROGRAMA             : 1
+PuntoYComa           : 2 9 10
+RESTA                : 13
+SUMA                 : 12
+TEXTO                : 
+TEXTO_MAL_FORMADO    : 
+TIPO_DATO            : 
+error                : 
+
+Nonterminals, with rules where they appear
+
+asignacion           : 3 8
+bloque               : 1
+expresion            : 2 9 10 11 12 12 13 13 14 14 15 15 16
+instruccion          : 6 7
+instrucciones        : 4 5 7
+programa             : 0
+
+Parsing method: LALR
+
+state 0
+
+    (0) S' -> . programa
+    (1) programa -> . PROGRAMA DosPuntos bloque
+    (2) programa -> . expresion PuntoYComa
+    (3) programa -> . asignacion
+    (12) expresion -> . expresion SUMA expresion
+    (13) expresion -> . expresion RESTA expresion
+    (14) expresion -> . expresion MULTIPLICACION expresion
+    (15) expresion -> . expresion DIVISION expresion
+    (16) expresion -> . PAREN_IZQ expresion PAREN_DER
+    (17) expresion -> . IDENTIFICADOR
+    (18) expresion -> . CONSTANTE
+    (10) asignacion -> . IDENTIFICADOR IGUAL expresion PuntoYComa
+    (11) asignacion -> . IDENTIFICADOR IGUAL expresion
+
+    PROGRAMA        shift and go to state 2
+    PAREN_IZQ       shift and go to state 5
+    IDENTIFICADOR   shift and go to state 6
+    CONSTANTE       shift and go to state 7
+
+    programa                       shift and go to state 1
+    expresion                      shift and go to state 3
+    asignacion                     shift and go to state 4
+
+state 1
+
+    (0) S' -> programa .
+
+
+
+state 2
+
+    (1) programa -> PROGRAMA . DosPuntos bloque
+
+    DosPuntos       shift and go to state 8
+
+
+state 3
+
+    (2) programa -> expresion . PuntoYComa
+    (12) expresion -> expresion . SUMA expresion
+    (13) expresion -> expresion . RESTA expresion
+    (14) expresion -> expresion . MULTIPLICACION expresion
+    (15) expresion -> expresion . DIVISION expresion
+
+    PuntoYComa      shift and go to state 9
+    SUMA            shift and go to state 10
+    RESTA           shift and go to state 11
+    MULTIPLICACION  shift and go to state 12
+    DIVISION        shift and go to state 13
+
+
+state 4
+
+    (3) programa -> asignacion .
+
+    $end            reduce using rule 3 (programa -> asignacion .)
+
+
+state 5
+
+    (16) expresion -> PAREN_IZQ . expresion PAREN_DER
+    (12) expresion -> . expresion SUMA expresion
+    (13) expresion -> . expresion RESTA expresion
+    (14) expresion -> . expresion MULTIPLICACION expresion
+    (15) expresion -> . expresion DIVISION expresion
+    (16) expresion -> . PAREN_IZQ expresion PAREN_DER
+    (17) expresion -> . IDENTIFICADOR
+    (18) expresion -> . CONSTANTE
+
+    PAREN_IZQ       shift and go to state 5
+    IDENTIFICADOR   shift and go to state 15
+    CONSTANTE       shift and go to state 7
+
+    expresion                      shift and go to state 14
+
+state 6
+
+    (17) expresion -> IDENTIFICADOR .
+    (10) asignacion -> IDENTIFICADOR . IGUAL expresion PuntoYComa
+    (11) asignacion -> IDENTIFICADOR . IGUAL expresion
+
+    PuntoYComa      reduce using rule 17 (expresion -> IDENTIFICADOR .)
+    SUMA            reduce using rule 17 (expresion -> IDENTIFICADOR .)
+    RESTA           reduce using rule 17 (expresion -> IDENTIFICADOR .)
+    MULTIPLICACION  reduce using rule 17 (expresion -> IDENTIFICADOR .)
+    DIVISION        reduce using rule 17 (expresion -> IDENTIFICADOR .)
+    IGUAL           shift and go to state 16
+
+
+state 7
+
+    (18) expresion -> CONSTANTE .
+
+    PuntoYComa      reduce using rule 18 (expresion -> CONSTANTE .)
+    SUMA            reduce using rule 18 (expresion -> CONSTANTE .)
+    RESTA           reduce using rule 18 (expresion -> CONSTANTE .)
+    MULTIPLICACION  reduce using rule 18 (expresion -> CONSTANTE .)
+    DIVISION        reduce using rule 18 (expresion -> CONSTANTE .)
+    PAREN_DER       reduce using rule 18 (expresion -> CONSTANTE .)
+    $end            reduce using rule 18 (expresion -> CONSTANTE .)
+    IDENTIFICADOR   reduce using rule 18 (expresion -> CONSTANTE .)
+    PAREN_IZQ       reduce using rule 18 (expresion -> CONSTANTE .)
+    CONSTANTE       reduce using rule 18 (expresion -> CONSTANTE .)
+    PALABRA_RESERVADA_FIN reduce using rule 18 (expresion -> CONSTANTE .)
+
+
+state 8
+
+    (1) programa -> PROGRAMA DosPuntos . bloque
+    (4) bloque -> . PALABRA_RESERVADA_INICIO instrucciones PALABRA_RESERVADA_FIN
+    (5) bloque -> . instrucciones
+    (6) instrucciones -> . instruccion
+    (7) instrucciones -> . instrucciones instruccion
+    (8) instruccion -> . asignacion
+    (9) instruccion -> . expresion PuntoYComa
+    (10) asignacion -> . IDENTIFICADOR IGUAL expresion PuntoYComa
+    (11) asignacion -> . IDENTIFICADOR IGUAL expresion
+    (12) expresion -> . expresion SUMA expresion
+    (13) expresion -> . expresion RESTA expresion
+    (14) expresion -> . expresion MULTIPLICACION expresion
+    (15) expresion -> . expresion DIVISION expresion
+    (16) expresion -> . PAREN_IZQ expresion PAREN_DER
+    (17) expresion -> . IDENTIFICADOR
+    (18) expresion -> . CONSTANTE
+
+    PALABRA_RESERVADA_INICIO shift and go to state 18
+    IDENTIFICADOR   shift and go to state 23
+    PAREN_IZQ       shift and go to state 5
+    CONSTANTE       shift and go to state 7
+
+    bloque                         shift and go to state 17
+    instrucciones                  shift and go to state 19
+    instruccion                    shift and go to state 20
+    asignacion                     shift and go to state 21
+    expresion                      shift and go to state 22
+
+state 9
+
+    (2) programa -> expresion PuntoYComa .
+
+    $end            reduce using rule 2 (programa -> expresion PuntoYComa .)
+
+
+state 10
+
+    (12) expresion -> expresion SUMA . expresion
+    (12) expresion -> . expresion SUMA expresion
+    (13) expresion -> . expresion RESTA expresion
+    (14) expresion -> . expresion MULTIPLICACION expresion
+    (15) expresion -> . expresion DIVISION expresion
+    (16) expresion -> . PAREN_IZQ expresion PAREN_DER
+    (17) expresion -> . IDENTIFICADOR
+    (18) expresion -> . CONSTANTE
+
+    PAREN_IZQ       shift and go to state 5
+    IDENTIFICADOR   shift and go to state 15
+    CONSTANTE       shift and go to state 7
+
+    expresion                      shift and go to state 24
+
+state 11
+
+    (13) expresion -> expresion RESTA . expresion
+    (12) expresion -> . expresion SUMA expresion
+    (13) expresion -> . expresion RESTA expresion
+    (14) expresion -> . expresion MULTIPLICACION expresion
+    (15) expresion -> . expresion DIVISION expresion
+    (16) expresion -> . PAREN_IZQ expresion PAREN_DER
+    (17) expresion -> . IDENTIFICADOR
+    (18) expresion -> . CONSTANTE
+
+    PAREN_IZQ       shift and go to state 5
+    IDENTIFICADOR   shift and go to state 15
+    CONSTANTE       shift and go to state 7
+
+    expresion                      shift and go to state 25
+
+state 12
+
+    (14) expresion -> expresion MULTIPLICACION . expresion
+    (12) expresion -> . expresion SUMA expresion
+    (13) expresion -> . expresion RESTA expresion
+    (14) expresion -> . expresion MULTIPLICACION expresion
+    (15) expresion -> . expresion DIVISION expresion
+    (16) expresion -> . PAREN_IZQ expresion PAREN_DER
+    (17) expresion -> . IDENTIFICADOR
+    (18) expresion -> . CONSTANTE
+
+    PAREN_IZQ       shift and go to state 5
+    IDENTIFICADOR   shift and go to state 15
+    CONSTANTE       shift and go to state 7
+
+    expresion                      shift and go to state 26
+
+state 13
+
+    (15) expresion -> expresion DIVISION . expresion
+    (12) expresion -> . expresion SUMA expresion
+    (13) expresion -> . expresion RESTA expresion
+    (14) expresion -> . expresion MULTIPLICACION expresion
+    (15) expresion -> . expresion DIVISION expresion
+    (16) expresion -> . PAREN_IZQ expresion PAREN_DER
+    (17) expresion -> . IDENTIFICADOR
+    (18) expresion -> . CONSTANTE
+
+    PAREN_IZQ       shift and go to state 5
+    IDENTIFICADOR   shift and go to state 15
+    CONSTANTE       shift and go to state 7
+
+    expresion                      shift and go to state 27
+
+state 14
+
+    (16) expresion -> PAREN_IZQ expresion . PAREN_DER
+    (12) expresion -> expresion . SUMA expresion
+    (13) expresion -> expresion . RESTA expresion
+    (14) expresion -> expresion . MULTIPLICACION expresion
+    (15) expresion -> expresion . DIVISION expresion
+
+    PAREN_DER       shift and go to state 28
+    SUMA            shift and go to state 10
+    RESTA           shift and go to state 11
+    MULTIPLICACION  shift and go to state 12
+    DIVISION        shift and go to state 13
+
+
+state 15
+
+    (17) expresion -> IDENTIFICADOR .
+
+    PAREN_DER       reduce using rule 17 (expresion -> IDENTIFICADOR .)
+    SUMA            reduce using rule 17 (expresion -> IDENTIFICADOR .)
+    RESTA           reduce using rule 17 (expresion -> IDENTIFICADOR .)
+    MULTIPLICACION  reduce using rule 17 (expresion -> IDENTIFICADOR .)
+    DIVISION        reduce using rule 17 (expresion -> IDENTIFICADOR .)
+    PuntoYComa      reduce using rule 17 (expresion -> IDENTIFICADOR .)
+    $end            reduce using rule 17 (expresion -> IDENTIFICADOR .)
+    IDENTIFICADOR   reduce using rule 17 (expresion -> IDENTIFICADOR .)
+    PAREN_IZQ       reduce using rule 17 (expresion -> IDENTIFICADOR .)
+    CONSTANTE       reduce using rule 17 (expresion -> IDENTIFICADOR .)
+    PALABRA_RESERVADA_FIN reduce using rule 17 (expresion -> IDENTIFICADOR .)
+
+
+state 16
+
+    (10) asignacion -> IDENTIFICADOR IGUAL . expresion PuntoYComa
+    (11) asignacion -> IDENTIFICADOR IGUAL . expresion
+    (12) expresion -> . expresion SUMA expresion
+    (13) expresion -> . expresion RESTA expresion
+    (14) expresion -> . expresion MULTIPLICACION expresion
+    (15) expresion -> . expresion DIVISION expresion
+    (16) expresion -> . PAREN_IZQ expresion PAREN_DER
+    (17) expresion -> . IDENTIFICADOR
+    (18) expresion -> . CONSTANTE
+
+    PAREN_IZQ       shift and go to state 5
+    IDENTIFICADOR   shift and go to state 15
+    CONSTANTE       shift and go to state 7
+
+    expresion                      shift and go to state 29
+
+state 17
+
+    (1) programa -> PROGRAMA DosPuntos bloque .
+
+    $end            reduce using rule 1 (programa -> PROGRAMA DosPuntos bloque .)
+
+
+state 18
+
+    (4) bloque -> PALABRA_RESERVADA_INICIO . instrucciones PALABRA_RESERVADA_FIN
+    (6) instrucciones -> . instruccion
+    (7) instrucciones -> . instrucciones instruccion
+    (8) instruccion -> . asignacion
+    (9) instruccion -> . expresion PuntoYComa
+    (10) asignacion -> . IDENTIFICADOR IGUAL expresion PuntoYComa
+    (11) asignacion -> . IDENTIFICADOR IGUAL expresion
+    (12) expresion -> . expresion SUMA expresion
+    (13) expresion -> . expresion RESTA expresion
+    (14) expresion -> . expresion MULTIPLICACION expresion
+    (15) expresion -> . expresion DIVISION expresion
+    (16) expresion -> . PAREN_IZQ expresion PAREN_DER
+    (17) expresion -> . IDENTIFICADOR
+    (18) expresion -> . CONSTANTE
+
+    IDENTIFICADOR   shift and go to state 23
+    PAREN_IZQ       shift and go to state 5
+    CONSTANTE       shift and go to state 7
+
+    instrucciones                  shift and go to state 30
+    instruccion                    shift and go to state 20
+    asignacion                     shift and go to state 21
+    expresion                      shift and go to state 22
+
+state 19
+
+    (5) bloque -> instrucciones .
+    (7) instrucciones -> instrucciones . instruccion
+    (8) instruccion -> . asignacion
+    (9) instruccion -> . expresion PuntoYComa
+    (10) asignacion -> . IDENTIFICADOR IGUAL expresion PuntoYComa
+    (11) asignacion -> . IDENTIFICADOR IGUAL expresion
+    (12) expresion -> . expresion SUMA expresion
+    (13) expresion -> . expresion RESTA expresion
+    (14) expresion -> . expresion MULTIPLICACION expresion
+    (15) expresion -> . expresion DIVISION expresion
+    (16) expresion -> . PAREN_IZQ expresion PAREN_DER
+    (17) expresion -> . IDENTIFICADOR
+    (18) expresion -> . CONSTANTE
+
+    $end            reduce using rule 5 (bloque -> instrucciones .)
+    IDENTIFICADOR   shift and go to state 23
+    PAREN_IZQ       shift and go to state 5
+    CONSTANTE       shift and go to state 7
+
+    instruccion                    shift and go to state 31
+    asignacion                     shift and go to state 21
+    expresion                      shift and go to state 22
+
+state 20
+
+    (6) instrucciones -> instruccion .
+
+    IDENTIFICADOR   reduce using rule 6 (instrucciones -> instruccion .)
+    PAREN_IZQ       reduce using rule 6 (instrucciones -> instruccion .)
+    CONSTANTE       reduce using rule 6 (instrucciones -> instruccion .)
+    $end            reduce using rule 6 (instrucciones -> instruccion .)
+    PALABRA_RESERVADA_FIN reduce using rule 6 (instrucciones -> instruccion .)
+
+
+state 21
+
+    (8) instruccion -> asignacion .
+
+    IDENTIFICADOR   reduce using rule 8 (instruccion -> asignacion .)
+    PAREN_IZQ       reduce using rule 8 (instruccion -> asignacion .)
+    CONSTANTE       reduce using rule 8 (instruccion -> asignacion .)
+    $end            reduce using rule 8 (instruccion -> asignacion .)
+    PALABRA_RESERVADA_FIN reduce using rule 8 (instruccion -> asignacion .)
+
+
+state 22
+
+    (9) instruccion -> expresion . PuntoYComa
+    (12) expresion -> expresion . SUMA expresion
+    (13) expresion -> expresion . RESTA expresion
+    (14) expresion -> expresion . MULTIPLICACION expresion
+    (15) expresion -> expresion . DIVISION expresion
+
+    PuntoYComa      shift and go to state 32
+    SUMA            shift and go to state 10
+    RESTA           shift and go to state 11
+    MULTIPLICACION  shift and go to state 12
+    DIVISION        shift and go to state 13
+
+
+state 23
+
+    (10) asignacion -> IDENTIFICADOR . IGUAL expresion PuntoYComa
+    (11) asignacion -> IDENTIFICADOR . IGUAL expresion
+    (17) expresion -> IDENTIFICADOR .
+
+    IGUAL           shift and go to state 16
+    PuntoYComa      reduce using rule 17 (expresion -> IDENTIFICADOR .)
+    SUMA            reduce using rule 17 (expresion -> IDENTIFICADOR .)
+    RESTA           reduce using rule 17 (expresion -> IDENTIFICADOR .)
+    MULTIPLICACION  reduce using rule 17 (expresion -> IDENTIFICADOR .)
+    DIVISION        reduce using rule 17 (expresion -> IDENTIFICADOR .)
+
+
+state 24
+
+    (12) expresion -> expresion SUMA expresion .
+    (12) expresion -> expresion . SUMA expresion
+    (13) expresion -> expresion . RESTA expresion
+    (14) expresion -> expresion . MULTIPLICACION expresion
+    (15) expresion -> expresion . DIVISION expresion
+
+    PuntoYComa      reduce using rule 12 (expresion -> expresion SUMA expresion .)
+    SUMA            reduce using rule 12 (expresion -> expresion SUMA expresion .)
+    RESTA           reduce using rule 12 (expresion -> expresion SUMA expresion .)
+    PAREN_DER       reduce using rule 12 (expresion -> expresion SUMA expresion .)
+    $end            reduce using rule 12 (expresion -> expresion SUMA expresion .)
+    IDENTIFICADOR   reduce using rule 12 (expresion -> expresion SUMA expresion .)
+    PAREN_IZQ       reduce using rule 12 (expresion -> expresion SUMA expresion .)
+    CONSTANTE       reduce using rule 12 (expresion -> expresion SUMA expresion .)
+    PALABRA_RESERVADA_FIN reduce using rule 12 (expresion -> expresion SUMA expresion .)
+    MULTIPLICACION  shift and go to state 12
+    DIVISION        shift and go to state 13
+
+  ! MULTIPLICACION  [ reduce using rule 12 (expresion -> expresion SUMA expresion .) ]
+  ! DIVISION        [ reduce using rule 12 (expresion -> expresion SUMA expresion .) ]
+  ! SUMA            [ shift and go to state 10 ]
+  ! RESTA           [ shift and go to state 11 ]
+
+
+state 25
+
+    (13) expresion -> expresion RESTA expresion .
+    (12) expresion -> expresion . SUMA expresion
+    (13) expresion -> expresion . RESTA expresion
+    (14) expresion -> expresion . MULTIPLICACION expresion
+    (15) expresion -> expresion . DIVISION expresion
+
+    PuntoYComa      reduce using rule 13 (expresion -> expresion RESTA expresion .)
+    SUMA            reduce using rule 13 (expresion -> expresion RESTA expresion .)
+    RESTA           reduce using rule 13 (expresion -> expresion RESTA expresion .)
+    PAREN_DER       reduce using rule 13 (expresion -> expresion RESTA expresion .)
+    $end            reduce using rule 13 (expresion -> expresion RESTA expresion .)
+    IDENTIFICADOR   reduce using rule 13 (expresion -> expresion RESTA expresion .)
+    PAREN_IZQ       reduce using rule 13 (expresion -> expresion RESTA expresion .)
+    CONSTANTE       reduce using rule 13 (expresion -> expresion RESTA expresion .)
+    PALABRA_RESERVADA_FIN reduce using rule 13 (expresion -> expresion RESTA expresion .)
+    MULTIPLICACION  shift and go to state 12
+    DIVISION        shift and go to state 13
+
+  ! MULTIPLICACION  [ reduce using rule 13 (expresion -> expresion RESTA expresion .) ]
+  ! DIVISION        [ reduce using rule 13 (expresion -> expresion RESTA expresion .) ]
+  ! SUMA            [ shift and go to state 10 ]
+  ! RESTA           [ shift and go to state 11 ]
+
+
+state 26
+
+    (14) expresion -> expresion MULTIPLICACION expresion .
+    (12) expresion -> expresion . SUMA expresion
+    (13) expresion -> expresion . RESTA expresion
+    (14) expresion -> expresion . MULTIPLICACION expresion
+    (15) expresion -> expresion . DIVISION expresion
+
+    PuntoYComa      reduce using rule 14 (expresion -> expresion MULTIPLICACION expresion .)
+    SUMA            reduce using rule 14 (expresion -> expresion MULTIPLICACION expresion .)
+    RESTA           reduce using rule 14 (expresion -> expresion MULTIPLICACION expresion .)
+    MULTIPLICACION  reduce using rule 14 (expresion -> expresion MULTIPLICACION expresion .)
+    DIVISION        reduce using rule 14 (expresion -> expresion MULTIPLICACION expresion .)
+    PAREN_DER       reduce using rule 14 (expresion -> expresion MULTIPLICACION expresion .)
+    $end            reduce using rule 14 (expresion -> expresion MULTIPLICACION expresion .)
+    IDENTIFICADOR   reduce using rule 14 (expresion -> expresion MULTIPLICACION expresion .)
+    PAREN_IZQ       reduce using rule 14 (expresion -> expresion MULTIPLICACION expresion .)
+    CONSTANTE       reduce using rule 14 (expresion -> expresion MULTIPLICACION expresion .)
+    PALABRA_RESERVADA_FIN reduce using rule 14 (expresion -> expresion MULTIPLICACION expresion .)
+
+  ! SUMA            [ shift and go to state 10 ]
+  ! RESTA           [ shift and go to state 11 ]
+  ! MULTIPLICACION  [ shift and go to state 12 ]
+  ! DIVISION        [ shift and go to state 13 ]
+
+
+state 27
+
+    (15) expresion -> expresion DIVISION expresion .
+    (12) expresion -> expresion . SUMA expresion
+    (13) expresion -> expresion . RESTA expresion
+    (14) expresion -> expresion . MULTIPLICACION expresion
+    (15) expresion -> expresion . DIVISION expresion
+
+    PuntoYComa      reduce using rule 15 (expresion -> expresion DIVISION expresion .)
+    SUMA            reduce using rule 15 (expresion -> expresion DIVISION expresion .)
+    RESTA           reduce using rule 15 (expresion -> expresion DIVISION expresion .)
+    MULTIPLICACION  reduce using rule 15 (expresion -> expresion DIVISION expresion .)
+    DIVISION        reduce using rule 15 (expresion -> expresion DIVISION expresion .)
+    PAREN_DER       reduce using rule 15 (expresion -> expresion DIVISION expresion .)
+    $end            reduce using rule 15 (expresion -> expresion DIVISION expresion .)
+    IDENTIFICADOR   reduce using rule 15 (expresion -> expresion DIVISION expresion .)
+    PAREN_IZQ       reduce using rule 15 (expresion -> expresion DIVISION expresion .)
+    CONSTANTE       reduce using rule 15 (expresion -> expresion DIVISION expresion .)
+    PALABRA_RESERVADA_FIN reduce using rule 15 (expresion -> expresion DIVISION expresion .)
+
+  ! SUMA            [ shift and go to state 10 ]
+  ! RESTA           [ shift and go to state 11 ]
+  ! MULTIPLICACION  [ shift and go to state 12 ]
+  ! DIVISION        [ shift and go to state 13 ]
+
+
+state 28
+
+    (16) expresion -> PAREN_IZQ expresion PAREN_DER .
+
+    PuntoYComa      reduce using rule 16 (expresion -> PAREN_IZQ expresion PAREN_DER .)
+    SUMA            reduce using rule 16 (expresion -> PAREN_IZQ expresion PAREN_DER .)
+    RESTA           reduce using rule 16 (expresion -> PAREN_IZQ expresion PAREN_DER .)
+    MULTIPLICACION  reduce using rule 16 (expresion -> PAREN_IZQ expresion PAREN_DER .)
+    DIVISION        reduce using rule 16 (expresion -> PAREN_IZQ expresion PAREN_DER .)
+    PAREN_DER       reduce using rule 16 (expresion -> PAREN_IZQ expresion PAREN_DER .)
+    $end            reduce using rule 16 (expresion -> PAREN_IZQ expresion PAREN_DER .)
+    IDENTIFICADOR   reduce using rule 16 (expresion -> PAREN_IZQ expresion PAREN_DER .)
+    PAREN_IZQ       reduce using rule 16 (expresion -> PAREN_IZQ expresion PAREN_DER .)
+    CONSTANTE       reduce using rule 16 (expresion -> PAREN_IZQ expresion PAREN_DER .)
+    PALABRA_RESERVADA_FIN reduce using rule 16 (expresion -> PAREN_IZQ expresion PAREN_DER .)
+
+
+state 29
+
+    (10) asignacion -> IDENTIFICADOR IGUAL expresion . PuntoYComa
+    (11) asignacion -> IDENTIFICADOR IGUAL expresion .
+    (12) expresion -> expresion . SUMA expresion
+    (13) expresion -> expresion . RESTA expresion
+    (14) expresion -> expresion . MULTIPLICACION expresion
+    (15) expresion -> expresion . DIVISION expresion
+
+    PuntoYComa      shift and go to state 33
+    $end            reduce using rule 11 (asignacion -> IDENTIFICADOR IGUAL expresion .)
+    IDENTIFICADOR   reduce using rule 11 (asignacion -> IDENTIFICADOR IGUAL expresion .)
+    PAREN_IZQ       reduce using rule 11 (asignacion -> IDENTIFICADOR IGUAL expresion .)
+    CONSTANTE       reduce using rule 11 (asignacion -> IDENTIFICADOR IGUAL expresion .)
+    PALABRA_RESERVADA_FIN reduce using rule 11 (asignacion -> IDENTIFICADOR IGUAL expresion .)
+    SUMA            shift and go to state 10
+    RESTA           shift and go to state 11
+    MULTIPLICACION  shift and go to state 12
+    DIVISION        shift and go to state 13
+
+
+state 30
+
+    (4) bloque -> PALABRA_RESERVADA_INICIO instrucciones . PALABRA_RESERVADA_FIN
+    (7) instrucciones -> instrucciones . instruccion
+    (8) instruccion -> . asignacion
+    (9) instruccion -> . expresion PuntoYComa
+    (10) asignacion -> . IDENTIFICADOR IGUAL expresion PuntoYComa
+    (11) asignacion -> . IDENTIFICADOR IGUAL expresion
+    (12) expresion -> . expresion SUMA expresion
+    (13) expresion -> . expresion RESTA expresion
+    (14) expresion -> . expresion MULTIPLICACION expresion
+    (15) expresion -> . expresion DIVISION expresion
+    (16) expresion -> . PAREN_IZQ expresion PAREN_DER
+    (17) expresion -> . IDENTIFICADOR
+    (18) expresion -> . CONSTANTE
+
+    PALABRA_RESERVADA_FIN shift and go to state 34
+    IDENTIFICADOR   shift and go to state 23
+    PAREN_IZQ       shift and go to state 5
+    CONSTANTE       shift and go to state 7
+
+    instruccion                    shift and go to state 31
+    asignacion                     shift and go to state 21
+    expresion                      shift and go to state 22
+
+state 31
+
+    (7) instrucciones -> instrucciones instruccion .
+
+    IDENTIFICADOR   reduce using rule 7 (instrucciones -> instrucciones instruccion .)
+    PAREN_IZQ       reduce using rule 7 (instrucciones -> instrucciones instruccion .)
+    CONSTANTE       reduce using rule 7 (instrucciones -> instrucciones instruccion .)
+    $end            reduce using rule 7 (instrucciones -> instrucciones instruccion .)
+    PALABRA_RESERVADA_FIN reduce using rule 7 (instrucciones -> instrucciones instruccion .)
+
+
+state 32
+
+    (9) instruccion -> expresion PuntoYComa .
+
+    IDENTIFICADOR   reduce using rule 9 (instruccion -> expresion PuntoYComa .)
+    PAREN_IZQ       reduce using rule 9 (instruccion -> expresion PuntoYComa .)
+    CONSTANTE       reduce using rule 9 (instruccion -> expresion PuntoYComa .)
+    $end            reduce using rule 9 (instruccion -> expresion PuntoYComa .)
+    PALABRA_RESERVADA_FIN reduce using rule 9 (instruccion -> expresion PuntoYComa .)
+
+
+state 33
+
+    (10) asignacion -> IDENTIFICADOR IGUAL expresion PuntoYComa .
+
+    $end            reduce using rule 10 (asignacion -> IDENTIFICADOR IGUAL expresion PuntoYComa .)
+    IDENTIFICADOR   reduce using rule 10 (asignacion -> IDENTIFICADOR IGUAL expresion PuntoYComa .)
+    PAREN_IZQ       reduce using rule 10 (asignacion -> IDENTIFICADOR IGUAL expresion PuntoYComa .)
+    CONSTANTE       reduce using rule 10 (asignacion -> IDENTIFICADOR IGUAL expresion PuntoYComa .)
+    PALABRA_RESERVADA_FIN reduce using rule 10 (asignacion -> IDENTIFICADOR IGUAL expresion PuntoYComa .)
+
+
+state 34
+
+    (4) bloque -> PALABRA_RESERVADA_INICIO instrucciones PALABRA_RESERVADA_FIN .
+
+    $end            reduce using rule 4 (bloque -> PALABRA_RESERVADA_INICIO instrucciones PALABRA_RESERVADA_FIN .)
+
