@@ -23,6 +23,7 @@ reserved = {
     'int': 'INT',
     'Cad': 'CAD',
     'Bool': 'BOOL',
+    
 }
 
 # Lista de tokens
@@ -303,6 +304,46 @@ def generar_archivo_tab(tokens_analizados, output_dir):
         for i, token in enumerate(tokens_analizados, 1):
             f.write("{:<8} {:<20} {:<50} {:<15}\n".format(
                 i, token['value'], token['type'], token_codes.get(token['type'], 999)))
+            
+
+def generar_depuracion(tokens_analizados, output_dir):
+    depurado = []
+    i = 0
+    n = len(tokens_analizados)
+    fin_encontrado = False
+
+    while i < n and not fin_encontrado:
+        token = tokens_analizados[i]
+
+        if token['type'] == 'PALABRA_RESERVADA_FIN':
+            fin_encontrado = True
+            depurado.append('Fin')
+            break
+
+        if token['type'] == 'COMENTARIO':
+            i += 1
+            continue
+
+        if token['type'] == 'COMA':
+            depurado.append(',')
+        elif (
+            i + 2 < n and
+            tokens_analizados[i]['type'] == 'IDENTIFICADOR' and
+            tokens_analizados[i+1]['type'] in ['IGUAL', 'ASIGNACION'] and
+            tokens_analizados[i+2]['type'] in ['NUMERO', 'IDENTIFICADOR', 'PARENTESIS_IZQ']
+        ):
+            depurado.append(
+                f"{tokens_analizados[i]['value']}{tokens_analizados[i+1]['value']}{tokens_analizados[i+2]['value']}"
+            )
+            i += 3
+            continue
+        else:
+            depurado.append(str(token['value']))
+
+        i += 1
+
+    with open(os.path.join(output_dir, 'progfte.dep'), 'w', encoding='utf-8') as f:
+        f.write(''.join(depurado))            
 
 def generar_arbol_sintactico(arbol, output_dir):
     def _generar_texto(nodo, nivel=0):
@@ -358,6 +399,7 @@ def analizar_archivo(file_path):
 
         generar_archivo_tok(tokens_analizados, output_dir)
         generar_archivo_tab(tokens_analizados, output_dir)
+        generar_depuracion(tokens_analizados, output_dir)
         generar_arbol_sintactico(arbol, output_dir)
 
         return True, f"Análisis completado. Archivos guardados en: {output_dir}"
