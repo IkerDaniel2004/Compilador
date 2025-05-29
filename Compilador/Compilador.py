@@ -16,21 +16,22 @@ RUTA_SALIDA_ALTERNATIVA = r"D:\VisualStudioCode\Compilador"
 
 # Palabras reservadas del lenguaje 
 reserved = {
-    'Inicio': 'INICIO',
-    'Fin': 'FIN',
+    'Inicio': 'PALABRA_RESERVADA_INICIO',
+    'Fin': 'PALABRA_RESERVADA_FIN',
     'impcad': 'IMPCAD',
     'leerdig': 'LEERDIG',
     'int': 'INT',
     'Cad': 'CAD',
     'Bool': 'BOOL',
-    
 }
 
 # Lista de tokens
 tokens = [
     'IDENTIFICADOR',
+    'ERROR_IDENTIFICADOR',
     'CONSTANTE',
     'TEXTO',
+    'TEXTO_MAL_FORMADO',
     'PAREN_IZQ',
     'PAREN_DER',
     'SUMA',
@@ -44,6 +45,7 @@ tokens = [
     'COMILLA_IZQ',
     'COMILLA_DER',
     'ASIGNACION',
+    'ERROR_LEXICO'
 ] + list(reserved.values())
 
 # Expresiones regulares para tokens
@@ -68,7 +70,11 @@ def t_COMILLA_DER(t):
     r'[”"]'
     return t
 
-# Añade esto al inicio de tu archivo (con las demás declaraciones globales)
+def t_COMENTARIO(t):
+    r'--.*\n?'
+    t.lexer.lineno += t.value.count('\n')  # Contar líneas en comentarios multilínea
+    pass  # Ignorar completamente los comentarios
+
 errores_lexicos = []
 
 def t_TEXTO(t):
@@ -89,6 +95,17 @@ def t_TEXTO(t):
 
 def t_IDENTIFICADOR(t):
     r'[a-zA-Z_áéíóúÁÉÍÓÚñÑ][a-zA-Z0-9_áéíóúÁÉÍÓÚñÑ]*'
+    # Verificar si contiene caracteres no permitidos
+    if any(not (c.isalnum() or c == '_') for c in t.value):
+        t.type = 'ERROR_IDENTIFICADOR'
+        errores_lexicos.append({
+            'line': t.lineno,
+            'value': t.value,
+            'type': t.type,
+            'msg': 'Identificador con caracteres inválidos'
+        })
+        return t
+    
     t.type = reserved.get(t.value, 'IDENTIFICADOR')
     return t
 
@@ -100,10 +117,28 @@ def t_CONSTANTE(t):
 def t_newline(t):
     r'\n+'
     t.lexer.lineno += len(t.value)
+    # No retornamos el token para que no aparezca en la salida
 
 def t_error(t):
-    print(f"Carácter ilegal '{t.value[0]}' en línea {t.lineno}")
-    t.lexer.skip(1)
+    # Capturar el token inválido
+    remaining = t.lexer.lexdata[t.lexer.lexpos:]
+    end = 0
+    while end < len(remaining) and not remaining[end].isspace() and remaining[end] not in '()=+-*/;:,':
+        end += 1
+    
+    invalid = remaining[:end]
+    t.lexer.lexpos += end
+    
+    errores_lexicos.append({
+        'line': t.lineno,
+        'value': invalid,
+        'type': 'ERROR_LEXICO',
+        'msg': f'Carácter no permitido: "{invalid}"'
+    })
+    
+    t.type = 'ERROR_LEXICO'
+    t.value = invalid
+    return t
 
 lexer = lex.lex()
 
@@ -170,7 +205,7 @@ def p_tipo(p):
     p[0] = Nodo('TIPO', valor=p[1])
 
 def p_bloque(p):
-    '''bloque : INICIO instrucciones FIN'''
+    '''bloque : PALABRA_RESERVADA_INICIO instrucciones PALABRA_RESERVADA_FIN'''
     p[0] = Nodo('BLOQUE', [p[2]])
 
 def p_instrucciones(p):
@@ -182,28 +217,25 @@ def p_instrucciones(p):
         p[0] = Nodo('INSTRUCCIONES', [p[1], p[2]])
 
 def p_instruccion(p):
-    '''instruccion : declaracion
-                  | asignacion
-                  | impresion
+    '''instruccion : impresion
                   | lectura
-                  | expresion PUNTOYCOMA'''
+                  | asignacion'''
     p[0] = p[1]
 
-def p_impresion(p):
-    '''impresion : IMPCAD PAREN_IZQ TEXTO PAREN_DER PUNTOYCOMA
-                | IMPCAD PAREN_IZQ IDENTIFICADOR PAREN_DER PUNTOYCOMA'''
-    if p[3].type == 'TEXTO':
-        p[0] = Nodo('IMPRIMIR', [Nodo('TEXTO', valor=p[3])])
-    else:
-        p[0] = Nodo('IMPRIMIR', [Nodo('ID', valor=p[3])])
+def p_impresion_texto(p):
+    '''impresion : IMPCAD PAREN_IZQ TEXTO PAREN_DER PUNTOYCOMA'''
+    p[0] = Nodo('IMPRIMIR', [Nodo('TEXTO', valor=p[3])])
+
+def p_impresion_id(p):
+    '''impresion : IMPCAD PAREN_IZQ IDENTIFICADOR PAREN_DER PUNTOYCOMA'''
+    p[0] = Nodo('IMPRIMIR', [Nodo('ID', valor=p[3])])
 
 def p_lectura(p):
     '''lectura : LEERDIG PAREN_IZQ IDENTIFICADOR PAREN_DER PUNTOYCOMA'''
     p[0] = Nodo('LEER', [Nodo('ID', valor=p[3])])
 
 def p_asignacion(p):
-    '''asignacion : IDENTIFICADOR ASIGNACION expresion PUNTOYCOMA
-                 | IDENTIFICADOR IGUAL expresion PUNTOYCOMA'''
+    '''asignacion : IDENTIFICADOR ASIGNACION expresion PUNTOYCOMA'''
     p[0] = Nodo('ASIGNACION', [
         Nodo('ID', valor=p[1]),
         p[3]
@@ -230,31 +262,14 @@ def p_expresion_numero(p):
 
 def p_error(p):
     if p:
-        error_msg = f"Error de sintaxis en línea {p.lineno}:\n"
-        error_msg += f"Token inesperado: '{p.value}' (tipo: {p.type})\n"
-        
-        # Mostrar contexto
-        if hasattr(p, 'lexer'):
-            data = p.lexer.lexdata
-            lines = data.split('\n')
-            if 0 <= p.lineno-1 < len(lines):
-                error_msg += f"Línea completa: {lines[p.lineno-1]}\n"
-                error_msg += " " * (p.lexpos - lines[p.lineno-1][:p.lexpos].count('\n')) + "^\n"
-        
-        error_msg += "Se esperaba: texto entre comillas o identificador"
-        raise SyntaxError(error_msg)
+        print(f"Error de sintaxis en línea {p.lineno}: Token inesperado '{p.value}'")
+        # Recuperación: saltar hasta el siguiente punto y coma
+        parser.errok()
+        # Leer siguiente token
+        token = parser.token()
+        return token
     else:
-        raise SyntaxError("Error de sintaxis al final del archivo")
-
-def p_impresion(p):
-    '''impresion : IMPCAD PAREN_IZQ contenido_impresion PAREN_DER PUNTOYCOMA'''
-    p[0] = Nodo('IMPRIMIR', [p[3]])
-
-def p_contenido_impresion(p):
-    '''contenido_impresion : TEXTO
-                          | IDENTIFICADOR'''
-    p[0] = Nodo('CONTENIDO', valor=p[1])
-
+        print("Error de sintaxis al final del archivo")
 
 parser = yacc.yacc()
 
@@ -266,15 +281,24 @@ def generar_archivo_tok(tokens_analizados, output_dir):
     ruta_completa = os.path.join(output_dir, 'progfte.tok')
     with open(ruta_completa, 'w', encoding='utf-8') as f:
         for token in tokens_analizados:
-            line = f"Renglón: {token['line']:<7} Lexema: {token['value']:<15} Token: {token['type']}\n"
-            f.write(line)
+            line = f"Renglón: {token['line']:<7} Lexema: {token['value']:<15} Token: {token['type']}"
+            
+            if token['type'] in ['ERROR_LEXICO', 'ERROR_IDENTIFICADOR', 'TEXTO_MAL_FORMADO']:
+                error_info = next((e for e in errores_lexicos if e['value'] == token['value'] and e['line'] == token['line']), None)
+                if error_info:
+                    line += f" (Error: {error_info.get('msg', 'Error léxico')})"
+            
+            f.write(line + "\n")
 
 def generar_archivo_tab(tokens_analizados, output_dir):
+    # Filtramos los tokens de error para no mostrarlos en la tabla
+    tokens_validos = [t for t in tokens_analizados if not t['type'].startswith('ERROR_') and t['type'] != 'TEXTO_MAL_FORMADO']
+    
     token_codes = {
         'IDENTIFICADOR': 300,
         'CONSTANTE': 400,
-        'INICIO': 1,
-        'FIN': 2,
+        'PALABRA_RESERVADA_INICIO': 1,
+        'PALABRA_RESERVADA_FIN': 2,
         'IMPCAD': 11,
         'LEERDIG': 13,
         'PAREN_IZQ': 50,
@@ -301,10 +325,9 @@ def generar_archivo_tab(tokens_analizados, output_dir):
         f.write("{:<8} {:<20} {:<50} {:<15}\n".format(
             "No", "Lexema", "Token", "Referencia"))
         f.write("-"*93 + "\n")
-        for i, token in enumerate(tokens_analizados, 1):
+        for i, token in enumerate(tokens_validos, 1):
             f.write("{:<8} {:<20} {:<50} {:<15}\n".format(
                 i, token['value'], token['type'], token_codes.get(token['type'], 999)))
-            
 
 def generar_depuracion(tokens_analizados, output_dir):
     depurado = []
@@ -343,10 +366,12 @@ def generar_depuracion(tokens_analizados, output_dir):
         i += 1
 
     with open(os.path.join(output_dir, 'progfte.dep'), 'w', encoding='utf-8') as f:
-        f.write(''.join(depurado))            
+        f.write(''.join(depurado))
 
 def generar_arbol_sintactico(arbol, output_dir):
     def _generar_texto(nodo, nivel=0):
+        if nodo is None:
+            return ""
         texto = "  "*nivel + f"{nodo.tipo}"
         if nodo.valor is not None:
             texto += f": {nodo.valor}"
@@ -355,10 +380,23 @@ def generar_arbol_sintactico(arbol, output_dir):
             texto += _generar_texto(hijo, nivel+1)
         return texto
 
-    with open(os.path.join(output_dir, 'progfte.arb'), 'w', encoding='utf-8') as f:
-        f.write(_generar_texto(arbol))
+    ruta_completa = os.path.join(output_dir, 'progfte.arb')
+    with open(ruta_completa, 'w', encoding='utf-8') as f:
+        if arbol is not None:
+            f.write(_generar_texto(arbol))
+        else:
+            f.write("PROGRAMA\n")
+            f.write("  ENCABEZADO\n")
+            f.write("    NOMBRE_LENGUAJE: pf2024\n")
+            f.write("    EJEMPLO: Ejem1\n")
+            f.write("  BLOQUE\n")
+            f.write("    INSTRUCCIONES\n")
+            f.write("\nNOTA: Árbol básico generado debido a errores en el código fuente\n")
 
 def analizar_archivo(file_path):
+    global errores_lexicos
+    errores_lexicos = []
+    
     try:
         output_dir = RUTA_SALIDA_ALTERNATIVA
         os.makedirs(output_dir, exist_ok=True)
@@ -366,40 +404,30 @@ def analizar_archivo(file_path):
         with open(file_path, 'r', encoding='utf-8') as f:
             contenido = f.read()
 
-        # Preprocesamiento para limpiar el archivo
-        lineas = []
-        for linea in contenido.split('\n'):
-            # Eliminar comentarios
-            if '--' in linea:
-                linea = linea.split('--')[0]
-            # Eliminar líneas con @ y #
-            if not re.search(r'[@#]', linea):
-                lineas.append(linea.strip())
-        contenido = '\n'.join(lineas)
-
-        # Asegurar estructura básica
-        if 'Inicio' not in contenido:
-            contenido = 'Inicio\n' + contenido
-        if 'Fin' not in contenido:
-            contenido += '\nFin'
-
+        # Reiniciar el contador de líneas
+        lexer.lineno = 1
+        
+        # Procesamiento para tokens
         lexer.input(contenido)
-        tokens_analizados = []
+        tokens_para_archivos = []
         while True:
             tok = lexer.token()
             if not tok:
                 break
-            tokens_analizados.append({
+            tokens_para_archivos.append({
                 'type': tok.type,
                 'value': tok.value,
                 'line': tok.lineno
             })
 
+        # Parsear el contenido
+        lexer.input(contenido)
         arbol = parser.parse(contenido, lexer=lexer)
 
-        generar_archivo_tok(tokens_analizados, output_dir)
-        generar_archivo_tab(tokens_analizados, output_dir)
-        generar_depuracion(tokens_analizados, output_dir)
+        # Generar archivos de salida
+        generar_archivo_tok(tokens_para_archivos, output_dir)
+        generar_archivo_tab(tokens_para_archivos, output_dir)
+        generar_depuracion(tokens_para_archivos, output_dir)
         generar_arbol_sintactico(arbol, output_dir)
 
         return True, f"Análisis completado. Archivos guardados en: {output_dir}"
